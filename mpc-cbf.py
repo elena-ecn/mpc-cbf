@@ -45,13 +45,7 @@ class MPC:
         _u = model.set_variable(var_type='_u', var_name='u', shape=(n_controls, 1))
 
         # State Space matrices
-        a = 1e-9  # Small positive constant so system has relative degree 1
-        B = SX.zeros(3, 2)
-        B[0, 0] = cos(_x[2])
-        B[0, 1] = -a*sin(_x[2])
-        B[1, 0] = sin(_x[2])
-        B[1, 1] = a*cos(_x[2])
-        B[2, 1] = 1
+        B = self.get_sys_matrix_B(_x)
 
         # Set right-hand-side of ODE for all introduced states (_x).
         x_next = _x + B@_u*self.Ts
@@ -68,6 +62,23 @@ class MPC:
         model.setup()
 
         return model
+
+    def get_sys_matrix_B(self, x):
+        """Defines the system input matrix B.
+
+        Inputs:
+          - x(casadi.casadi.SX): The state vector [3x1]
+        Returns:
+          - B(casadi.casadi.SX): The system input matrix B [3x2]
+        """
+        a = 1e-9  # Small positive constant so system has relative degree 1
+        B = SX.zeros(3, 2)
+        B[0, 0] = cos(x[2])
+        B[0, 1] = -a*sin(x[2])
+        B[1, 0] = sin(x[2])
+        B[1, 1] = a*cos(x[2])
+        B[2, 1] = 1
+        return B
 
     def get_cost_expression(self, model):
         """Defines the objective function wrt the state cost depending on the type of control."""
@@ -124,19 +135,7 @@ class MPC:
         #         i += 1
 
         # Add CBF constraints
-        a = 1e-9  # Small positive constant so system has relative degree 1
-        B = SX.zeros(3, 2)
-        B[0, 0] = cos(self.model.x['x'][2])
-        B[0, 1] = -a*sin(self.model.x['x'][2])
-        B[1, 0] = sin(self.model.x['x'][2])
-        B[1, 1] = a*cos(self.model.x['x'][2])
-        B[2, 1] = 1
-        
-        x_k1 = self.model.x['x'] + B@self.model.u['u']*self.Ts
-        h_k1 = self.h(x_k1)
-        h_k = self.h(self.model.x['x'])
-        cbc = -h_k1 + (1-self.gamma)*h_k
-        mpc.set_nl_cons('cbf_constraint', cbc, ub=0)
+        mpc = self.add_cbf_constraints(mpc)
 
         # Define time-varying parameters for the objective function, if doing trajectory tracking
         if self.control_type == "traj_tracking":
@@ -146,16 +145,51 @@ class MPC:
 
         return mpc
 
-    def h(self, x):
-        """Control Barrier Function."""
-        # h = []
-        # for x_obs, y_obs, r_obs in self.obs:
-        #     h.append((x[0] - x_obs)**2 + (x[1] - y_obs)**2 + (self.r + r_obs)**2)
+    def add_cbf_constraints(self, mpc):
+        """Adds the CBF constraints to the mpc model.
 
-        x_obs, y_obs, r_obs = self.obs[0]
+        Returns:
+          - mpc(do_mpc.controller.MPC): The mpc model with CBF constraints added
+        """
+        cbf_constraints = self.get_cbf_constraints()
+        i = 0
+        for cbc in cbf_constraints:
+            mpc.set_nl_cons('cbf_constraint'+str(i), cbc, ub=0)
+            i += 1
+
+        return mpc
+
+    def get_cbf_constraints(self):
+        """Computes the CBF constraints for all obstacles.
+
+        Returns:
+          - cbf_constraints(list): The CBF constraints for each obstacle
+        """
+        # Get state vector x_{t+k+1}
+        B = self.get_sys_matrix_B(self.model.x['x'])
+        x_k1 = self.model.x['x'] + B@self.model.u['u']*self.Ts
+
+        # Compute CBF constraints
+        cbf_constraints = []
+        for obs in self.obs:
+            h_k1 = self.h(x_k1, obs)
+            h_k = self.h(self.model.x['x'], obs)
+            cbf_constraints.append(-h_k1 + (1-self.gamma)*h_k)
+
+        return cbf_constraints
+
+    def h(self, x, obstacle):
+        """Computes the Control Barrier Function.
+        
+        Inputs:
+          - x(casadi.casadi.SX): The state vector [3x1]
+          - obstacle(tuple):     The obstacle position and radius
+        Returns:
+          - h(casadi.casadi.SX): The Control Barrier Function
+        """
+        x_obs, y_obs, r_obs = obstacle
         h = (x[0] - x_obs)**2 + (x[1] - y_obs)**2 - (self.r + r_obs)**2
         return h
-
 
     @staticmethod
     def set_tvp_for_mpc(mpc):
