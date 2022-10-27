@@ -4,7 +4,7 @@ sim_time = 100                     # Total simulation time steps
 Ts = 0.2                          # Sampling time [s]
 T_horizon = 10                     # Prediction horizon time steps
 
-gamma = 0.2                        # CBF parameter
+gamma = 0.2                        # CBF parameter in [0,1]
 # Initial conditions
 x0 = np.array([0, 0, 0])           # Initial state
 
@@ -17,14 +17,14 @@ R = np.array([2, 0.5])             # Controls cost matrix
 
 # Type of control
 controller = "MPC-CBF"             # Options: "MPC-CBF", "MPC-DC"
-control_type = "setpoint"     # Options: "setpoint", "traj_tracking"
+control_type = "setpoint"          # Options: "setpoint", "traj_tracking"
 
 # For setpoint control:
 goal = [2, 1, np.pi/2]             # Robot's goal for set point control
 Q_sp = np.diag([15, 15, 0.005])    # State cost matrix
 
 # For trajectory tracking control:
-Q_tr = np.diag([45, 45, 0.001])   # State cost matrix
+Q_tr = np.diag([45, 45, 0.001])    # State cost matrix
 trajectory = "circular"            # Type of trajectory. Options: circular,
 
 # Obstacles

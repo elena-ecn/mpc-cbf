@@ -2,7 +2,6 @@ import do_mpc
 from casadi import *
 
 import config
-from plotter import Plotter
 
 
 class MPC:
@@ -22,7 +21,7 @@ class MPC:
         self.control_type = config.control_type  # "setpoint" or "traj_tracking"
         if self.control_type == "setpoint":      # Go-to-goal
             self.goal = config.goal              # Robot's goal pose
-        self.gamma = config.gamma
+        self.gamma = config.gamma                # CBF parameter
 
         self.model = self.define_model()
         self.mpc = self.define_mpc()
@@ -250,21 +249,3 @@ class MPC:
             u0 = self.mpc.make_step(x0)
             y_next = self.simulator.make_step(u0)
             x0 = self.estimator.make_step(y_next)
-
-
-def main():
-    """ """
-    np.random.seed(99)
-
-    controller = MPC()           # Define model, controller, simulator and estimator
-    controller.run_simulation()  # Closed-loop control simulation
-
-    plotter = Plotter(controller.mpc)
-    # plotter.plot_results()
-    # plotter.plot_predictions()
-    plotter.plot_path()
-    # plotter.create_animation()
-
-
-if __name__ == '__main__':
-    main()
