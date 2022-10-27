@@ -30,7 +30,11 @@ class MPC:
         self.set_init_state()
 
     def define_model(self):
-        """Configures the dynamical model of the system (and part of the objective function)."""
+        """Configures the dynamical model of the system (and part of the objective function).
+
+        Returns:
+          - model(do_mpc.model.Model): The system model
+        """
 
         model_type = 'discrete'
         model = do_mpc.model.Model(model_type)
@@ -80,7 +84,15 @@ class MPC:
         return B
 
     def get_cost_expression(self, model):
-        """Defines the objective function wrt the state cost depending on the type of control."""
+        """Defines the objective function wrt the state cost depending on the type of control.
+
+        Inputs:
+          - model(do_mpc.model.Model):         The system model
+        Returns:
+          - model(do_mpc.model.Model):         The system model
+          - cost_expression(casadi.casadi.SX): The objective function cost wrt the state
+        """
+
         if self.control_type == "setpoint":  # Go-to-goal
             # Define state error
             X = model.x['x'] - self.goal
@@ -88,6 +100,7 @@ class MPC:
             # Set time-varying parameters for the objective function
             model.set_variable('_tvp', 'x_set_point')
             model.set_variable('_tvp', 'y_set_point')
+
             # Define state error
             theta_des = np.arctan2(model.x['x', 1] - model.tvp['y_set_point'], model.x['x', 0] - model.tvp['x_set_point'])
             X = SX.zeros(3, 1)
@@ -96,10 +109,15 @@ class MPC:
             X[2] = model.x['x', 2] - theta_des
 
         cost_expression = transpose(X)@self.Q@X
+
         return model, cost_expression
 
     def define_mpc(self):
-        """Configures the mpc controller."""
+        """Configures the mpc controller.
+
+        Returns:
+          - mpc(do_mpc.model.MPC): The mpc controller
+        """
 
         mpc = do_mpc.controller.MPC(self.model)
 
@@ -132,7 +150,7 @@ class MPC:
                 # MPC-CBF: Add CBF constraints
                 mpc = self.add_cbf_constraints(mpc)
 
-        # Define time-varying parameters for the objective function, if doing trajectory tracking
+        # If trajectory tracking: Define time-varying parameters for the objective function
         if self.control_type == "traj_tracking":
             mpc = self.set_tvp_for_mpc(mpc)
 
@@ -141,10 +159,12 @@ class MPC:
         return mpc
 
     def add_obstacle_constraints(self, mpc):
-        """Adds the obstacle constraints to the mpc model. (MPC-DC)
+        """Adds the obstacle constraints to the mpc controller. (MPC-DC)
 
+        Inputs:
+          - mpc(do_mpc.controller.MPC): The mpc controller
         Returns:
-          - mpc(do_mpc.controller.MPC): The mpc model with obstacle constraints added
+          - mpc(do_mpc.controller.MPC): The mpc controller with obstacle constraints added
         """
         i = 0
         for x_obs, y_obs, r_obs in self.obs:
@@ -157,8 +177,10 @@ class MPC:
         return mpc
 
     def add_cbf_constraints(self, mpc):
-        """Adds the CBF constraints to the mpc model. (MPC-CBF)
+        """Adds the CBF constraints to the mpc controller. (MPC-CBF)
 
+        Inputs:
+          - mpc(do_mpc.controller.MPC): The mpc controller
         Returns:
           - mpc(do_mpc.controller.MPC): The mpc model with CBF constraints added
         """
@@ -204,7 +226,13 @@ class MPC:
 
     @staticmethod
     def set_tvp_for_mpc(mpc):
-        """Sets the trajectory to be followed for trajectory tracking."""
+        """Sets the trajectory to be followed for trajectory tracking.
+
+        Inputs:
+          - mpc(do_mpc.controller.MPC): The mpc controller
+        Returns:
+          - mpc(do_mpc.controller.MPC): The mpc model with time-varying parameters added
+        """
         tvp_struct_mpc = mpc.get_tvp_template()
 
         def tvp_fun_mpc(t_now):
@@ -221,10 +249,15 @@ class MPC:
         return mpc
 
     def define_simulator(self):
-        """Configures the simulator."""
+        """Configures the simulator.
+
+        Returns:
+          - simulator(do_mpc.simulator.Simulator): The simulator
+        """
         simulator = do_mpc.simulator.Simulator(self.model)
         simulator.set_param(t_step=self.Ts)
 
+        # If trajectory tracking: Add time-varying parameters
         if self.control_type == "traj_tracking":
             tvp_template = simulator.get_tvp_template()
 
@@ -233,6 +266,7 @@ class MPC:
             simulator.set_tvp_fun(tvp_fun)
 
         simulator.setup()
+
         return simulator
 
     def set_init_state(self):

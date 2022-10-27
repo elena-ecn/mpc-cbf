@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
-import matplotlib as mpl
-from matplotlib.animation import FuncAnimation, FFMpegWriter, ImageMagickWriter
+from matplotlib.animation import FuncAnimation, ImageMagickWriter
 import do_mpc
 import seaborn as sns
 import numpy as np
@@ -38,7 +37,7 @@ class Plotter:
         plt.show()
 
     def plot_predictions(self, t_ind=int(config.sim_time/2)):
-        """ """
+        """Plots the predictions at timestep t_ind."""
         mpc_graphics = do_mpc.graphics.Graphics(self.mpc.data)
 
         sns.set_theme()
@@ -63,7 +62,7 @@ class Plotter:
         plt.show()
 
     def create_animation(self):
-        """ """
+        """Creates an animation with the predictions."""
         mpc_graphics = do_mpc.graphics.Graphics(self.mpc.data)
         mpc_graphics.reset_axes()
         
