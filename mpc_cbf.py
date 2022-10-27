@@ -145,7 +145,7 @@ class MPC:
         if self.obstacles_on:
             if config.controller == "MPC-DC":
                 # MPC-DC: Add obstacle avoidance constraints
-                self.add_obstacle_constraints(mpc)
+                mpc = self.add_obstacle_constraints(mpc)
             else:
                 # MPC-CBF: Add CBF constraints
                 mpc = self.add_cbf_constraints(mpc)
