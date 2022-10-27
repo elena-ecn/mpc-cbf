@@ -1,0 +1,13 @@
+# Editors
+*~
+*.el
+.idea
+.vscode
+
+# Build artifacts
+build/
+docs/
+
+# Python
+venv/
+__pycache__
