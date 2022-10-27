@@ -124,18 +124,14 @@ class MPC:
         mpc.bounds['lower', '_u', 'u'] = -max_u
         mpc.bounds['upper', '_u', 'u'] = max_u
 
-        # Optional: Add obstacle avoidance constraints
-        # if self.obstacles_on:
-        #     i = 0
-        #     for x_obs, y_obs, r_obs in self.obs:
-        #         obs_avoid = - (self.model.x['x'][0] - x_obs)**2 \
-        #                     - (self.model.x['x'][1] - y_obs)**2 \
-        #                     + (self.r + r_obs)**2
-        #         mpc.set_nl_cons('obstacle_constraint'+str(i), obs_avoid, ub=0)
-        #         i += 1
-
-        # Add CBF constraints
-        mpc = self.add_cbf_constraints(mpc)
+        # Add safety constraints
+        if self.obstacles_on:
+            if config.controller == "MPC-DC":
+                # MPC-DC: Add obstacle avoidance constraints
+                self.add_obstacle_constraints(mpc)
+            else:
+                # MPC-CBF: Add CBF constraints
+                mpc = self.add_cbf_constraints(mpc)
 
         # Define time-varying parameters for the objective function, if doing trajectory tracking
         if self.control_type == "traj_tracking":
@@ -145,8 +141,24 @@ class MPC:
 
         return mpc
 
+    def add_obstacle_constraints(self, mpc):
+        """Adds the obstacle constraints to the mpc model. (MPC-DC)
+
+        Returns:
+          - mpc(do_mpc.controller.MPC): The mpc model with obstacle constraints added
+        """
+        i = 0
+        for x_obs, y_obs, r_obs in self.obs:
+            obs_avoid = - (self.model.x['x'][0] - x_obs)**2 \
+                        - (self.model.x['x'][1] - y_obs)**2 \
+                        + (self.r + r_obs)**2
+            mpc.set_nl_cons('obstacle_constraint'+str(i), obs_avoid, ub=0)
+            i += 1
+
+        return mpc
+
     def add_cbf_constraints(self, mpc):
-        """Adds the CBF constraints to the mpc model.
+        """Adds the CBF constraints to the mpc model. (MPC-CBF)
 
         Returns:
           - mpc(do_mpc.controller.MPC): The mpc model with CBF constraints added

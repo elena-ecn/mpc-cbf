@@ -16,7 +16,8 @@ omega_limit = 1.8                  # Angular velocity limit
 R = np.array([2, 0.5])             # Controls cost matrix
 
 # Type of control
-control_type = "setpoint"     # Options: setpoint, traj_tracking
+controller = "MPC-CBF"             # Options: "MPC-CBF", "MPC-DC"
+control_type = "setpoint"     # Options: "setpoint", "traj_tracking"
 
 # For setpoint control:
 goal = [2, 1, np.pi/2]             # Robot's goal for set point control
@@ -29,17 +30,17 @@ trajectory = "circular"            # Type of trajectory. Options: circular,
 # Obstacles
 obstacles_on = True                # Whether to have obstacles or not
 r = 0.1                            # Robot radius (for obstacle avoidance)
-# obs = [(-0.2, 0.8, 0.03),
-#        (0.0, -0.75, 0.02)]           # Define obstacles as list of tuples (x,y,radius)
+obs = [(-0.2, 0.8, 0.03),
+       (0.0, -0.75, 0.02)]           # Define obstacles as list of tuples (x,y,radius)
 
 
 # Go-to-goal scenarios
 # Scenario 1
-obs = [(1.0, 0.5, 0.05)]           # Define obstacles as list of tuples (x,y,radius)
+# obs = [(1.0, 0.5, 0.05)]           # Define obstacles as list of tuples (x,y,radius)
 
 # Scenario 2
-# obs = [(0.5, 0.3, 0.05),
-#        (1.5, 0.7, 0.05)]           # Define obstacles as list of tuples (x,y,radius)
+obs = [(0.5, 0.3, 0.05),
+       (1.5, 0.7, 0.05)]           # Define obstacles as list of tuples (x,y,radius)
 
 # Scenario 3
 # obs = [(0.25, 0.1, 0.025),
