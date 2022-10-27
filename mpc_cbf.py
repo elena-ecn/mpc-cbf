@@ -240,6 +240,9 @@ class MPC:
             if config.trajectory == "circular":
                 x_traj = config.A*cos(config.w*t_now)
                 y_traj = config.A*sin(config.w*t_now)
+            else:
+                x_traj = config.A*cos(config.w*t_now)/(sin(config.w*t_now)**2 + 1)
+                y_traj = config.A*sin(config.w*t_now)*cos(config.w*t_now)/(sin(config.w*t_now)**2 + 1)
 
             tvp_struct_mpc['_tvp', :, 'x_set_point'] = x_traj
             tvp_struct_mpc['_tvp', :, 'y_set_point'] = y_traj

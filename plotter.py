@@ -33,6 +33,10 @@ class Plotter:
             if config.trajectory == "circular":
                 ax[0].plot(t, config.A*np.cos(config.w*t), 'k--', lw=1)
                 ax[0].plot(t, config.A*np.sin(config.w*t), 'k--', lw=1)
+            else:
+                ax[0].plot(t, config.A*np.cos(config.w*t)/(np.sin(config.w*t)**2 + 1), 'k--', lw=1)
+                ax[0].plot(t, config.A*np.sin(config.w*t)*np.cos(config.w*t)/(np.sin(config.w*t)**2 + 1), 'k--', lw=1)
+
         plt.savefig('images/trajectories.png')
         plt.show()
 
@@ -112,6 +116,10 @@ class Plotter:
             t = np.linspace(0, config.sim_time*config.Ts)
             if config.trajectory == "circular":
                 ax.plot(config.A*np.cos(config.w*t), config.A*np.sin(config.w*t), 'k--', label="Reference trajectory")
+            else:
+                ax.plot(config.A*np.cos(config.w*t)/(np.sin(config.w*t)**2 + 1),
+                        config.A*np.sin(config.w*t)*np.cos(config.w*t)/(np.sin(config.w*t)**2 + 1),
+                        'k--', label="Reference trajectory")
 
         # Plot (extended) obstacles
         if config.obstacles_on:
