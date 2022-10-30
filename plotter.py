@@ -8,8 +8,8 @@ import config
 
 
 class Plotter:
-    def __init__(self, mpc):
-        self.mpc = mpc
+    def __init__(self, controller):
+        self.mpc = controller.mpc
 
     def plot_results(self):
         """Plots the state trajectories, the controls and objective value at each timestep."""
@@ -29,13 +29,8 @@ class Plotter:
 
         # Plot reference trajectory, if trajectory tracking
         if config.control_type == "traj_tracking":
-            t = np.linspace(0, config.sim_time*config.Ts)
-            if config.trajectory == "circular":
-                ax[0].plot(t, config.A*np.cos(config.w*t), 'k--', lw=1)
-                ax[0].plot(t, config.A*np.sin(config.w*t), 'k--', lw=1)
-            else:
-                ax[0].plot(t, config.A*np.cos(config.w*t)/(np.sin(config.w*t)**2 + 1), 'k--', lw=1)
-                ax[0].plot(t, config.A*np.sin(config.w*t)*np.cos(config.w*t)/(np.sin(config.w*t)**2 + 1), 'k--', lw=1)
+            ax[0].plot(self.mpc.data['_time'], self.mpc.data['_tvp', 'x_set_point'], 'k--', lw=1)
+            ax[0].plot(self.mpc.data['_time'], self.mpc.data['_tvp', 'y_set_point'], 'k--', lw=1)
 
         plt.savefig('images/trajectories.png')
         plt.show()
@@ -113,13 +108,7 @@ class Plotter:
             ax.plot(self.mpc.data['_x'][-1, 0], self.mpc.data['_x'][-1, 1], 'b.', label="Final position")
             ax.plot(config.goal[0], config.goal[1], 'g*', label="Goal")
         else:
-            t = np.linspace(0, config.sim_time*config.Ts)
-            if config.trajectory == "circular":
-                ax.plot(config.A*np.cos(config.w*t), config.A*np.sin(config.w*t), 'k--', label="Reference trajectory")
-            else:
-                ax.plot(config.A*np.cos(config.w*t)/(np.sin(config.w*t)**2 + 1),
-                        config.A*np.sin(config.w*t)*np.cos(config.w*t)/(np.sin(config.w*t)**2 + 1),
-                        'k--', label="Reference trajectory")
+            ax.plot(self.mpc.data['_tvp', 'x_set_point'], self.mpc.data['_tvp', 'y_set_point'], 'k--', label="Reference trajectory")
 
         # Plot (extended) obstacles
         if config.obstacles_on:

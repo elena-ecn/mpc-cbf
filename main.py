@@ -18,7 +18,7 @@ def main():
     controller.run_simulation()  # Closed-loop control simulation
 
     # Plots
-    plotter = Plotter(controller.mpc)
+    plotter = Plotter(controller)
     plotter.plot_results()
     plotter.plot_predictions()
     plotter.plot_path()
