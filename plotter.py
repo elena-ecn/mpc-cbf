@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation, ImageMagickWriter
+from matplotlib.patches import Circle
 import do_mpc
 import seaborn as sns
 import numpy as np
@@ -110,6 +111,10 @@ class Plotter:
         else:
             ax.plot(self.mpc.data['_tvp', 'x_set_point'], self.mpc.data['_tvp', 'y_set_point'], 'k--', label="Reference trajectory")
 
+        # Plot moving obstacle trajectory
+        if config.moving_obstacles_on is True:
+            ax.plot(self.mpc.data['_tvp', 'x_moving_obs'], self.mpc.data['_tvp', 'y_moving_obs'], 'k', label="Moving Obstacle")
+
         # Plot (extended) obstacles
         if config.obstacles_on:
             for x_obs, y_obs, r_obs in config.obs:
@@ -118,3 +123,85 @@ class Plotter:
         plt.legend(loc="upper left")
         plt.savefig('images/path.png')
         plt.show()
+
+    def create_path_animation(self):
+        """Creates an animation for the robot path in the x-y plane."""
+        global ax
+
+        sns.set_theme()
+        fig, ax = plt.subplots(figsize=(9, 5))
+        ax.set_xlabel('x [m]')
+        ax.set_ylabel('y [m]')
+        plt.title("Robot path")
+        plt.tight_layout()
+        ax.axis('equal')
+
+        # Plot goal or reference trajectory
+        if config.control_type == "setpoint":
+            ax.plot(config.goal[0], config.goal[1], 'g*', label="Goal")
+        else:
+            ax.plot(self.mpc.data['_tvp', 'x_set_point'], self.mpc.data['_tvp', 'y_set_point'], 'k--', label="Reference trajectory")
+
+        # Static obstacles
+        if config.obstacles_on:
+            for x_obs, y_obs, r_obs in config.obs:
+                ax.add_patch(plt.Circle((x_obs, y_obs), r_obs, color='k'))
+
+        # Moving obstacle
+        if config.moving_obstacles_on is True:
+            globals()['moving_obs'] = Circle((0, 0), config.r_moving_obs, color='k')
+            ax.add_patch(globals()['moving_obs'])
+
+        # Robot's heading indicator
+        globals()['robot_heading'] = plt.Arrow(x=0, y=0, dx=0, dy=0, color='k', width=0.1, linewidth=0.6)
+        ax.add_patch(globals()['robot_heading'])
+
+        # Robot base
+        globals()['robot_base'] = Circle((0, 0), config.r)
+        ax.add_patch(globals()['robot_base'])
+
+        # Robot's trace
+        globals()['trace'] = ax.plot([], [], 'b', alpha=0.7, lw=1.5)[0]
+
+        # Legend
+        plt.legend(loc="upper left")
+
+        # Run the animation
+        ani = FuncAnimation(fig, self.animate_path, frames=len(self.mpc.data['_x'][:, 0]), interval=config.Ts*1000, repeat=False)
+        plt.show()
+        # Save animation as gif
+        ani.save('images/path_animation.gif', writer=ImageMagickWriter(fps=3))
+
+    def animate_path(self, i):
+        """Draws each frame of the animation."""
+
+        # Robot's heading
+        ax.patches.remove(globals()['robot_heading'])
+        globals()['robot_heading'] = plt.Arrow(x=self.mpc.data['_x'][i, 0],
+                                               y=self.mpc.data['_x'][i, 1],
+                                               dx=np.cos(self.mpc.data['_x'][i, 2])/6,
+                                               dy=np.sin(self.mpc.data['_x'][i, 2])/6,
+                                               color='k',
+                                               width=0.1,
+                                               linewidth=0.6)
+        ax.add_patch(globals()['robot_heading'])
+
+        # Robot's base
+        ax.patches.remove(globals()['robot_base'])
+        globals()['robot_base'] = Circle((self.mpc.data['_x'][i, 0], self.mpc.data['_x'][i, 1]), config.r, zorder=2)
+        ax.add_patch(globals()['robot_base'])
+
+        # Robot's trace
+        tx = [t for t in self.mpc.data['_x'][:i, 0]]  # Trace x-axis positions
+        ty = [t for t in self.mpc.data['_x'][:i, 1]]  # Trace y-axis positions
+        globals()['trace'].set_data(tx, ty)
+
+        # Moving obstacle
+        if config.moving_obstacles_on is True:
+            ax.patches.remove(globals()['moving_obs'])
+            globals()['moving_obs'] = Circle((self.mpc.data['_tvp', 'x_moving_obs'][i], self.mpc.data['_tvp', 'y_moving_obs'][i]),
+                                             config.r_moving_obs,
+                                             color='k')
+            ax.add_patch(globals()['moving_obs'])
+
+        return

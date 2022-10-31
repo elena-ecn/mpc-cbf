@@ -15,6 +15,7 @@ class MPC:
         self.R = config.R                        # Controls cost matrix
         self.Q = config.Q                        # State cost matrix
         self.obstacles_on = config.obstacles_on  # Whether to have obstacles
+        self.moving_obstacles_on = config.moving_obstacles_on  # Whether to have moving obstacles
         if self.obstacles_on:
             self.obs = config.obs                # Obstacles
             self.r = config.r                    # Robot radius (for obstacle avoidance)
@@ -52,7 +53,7 @@ class MPC:
 
         # Set right-hand-side of ODE for all introduced states (_x).
         x_next = _x + B@_u*self.Ts
-        model.set_rhs('x', x_next, process_noise=False)  # ToDo Optional noise
+        model.set_rhs('x', x_next, process_noise=False)
 
         # Optional: Define an expression, which represents the stage and terminal
         # cost of the control problem. This term will be later used as the cost in
@@ -61,12 +62,18 @@ class MPC:
         model, cost_expr = self.get_cost_expression(model)
         model.set_expression(expr_name='cost', expr=cost_expr)
 
+        # Moving obstacle (define time-varying parameter for its position)
+        if self.moving_obstacles_on is True:
+            model.set_variable('_tvp', 'x_moving_obs')
+            model.set_variable('_tvp', 'y_moving_obs')
+
         # Setup model
         model.setup()
 
         return model
 
-    def get_sys_matrix_B(self, x):
+    @staticmethod
+    def get_sys_matrix_B(x):
         """Defines the system input matrix B.
 
         Inputs:
@@ -150,8 +157,8 @@ class MPC:
                 # MPC-CBF: Add CBF constraints
                 mpc = self.add_cbf_constraints(mpc)
 
-        # If trajectory tracking: Define time-varying parameters for the objective function
-        if self.control_type == "traj_tracking":
+        # If trajectory tracking or moving obstacles: Define time-varying parameters
+        if self.control_type == "traj_tracking" or self.moving_obstacles_on is True:
             mpc = self.set_tvp_for_mpc(mpc)
 
         mpc.setup()
@@ -173,6 +180,12 @@ class MPC:
                         + (self.r + r_obs)**2
             mpc.set_nl_cons('obstacle_constraint'+str(i), obs_avoid, ub=0)
             i += 1
+
+        if self.moving_obstacles_on is True:  # ToDo
+            obs_avoid = - (self.model.x['x'][0] - self.model.tvp['x_moving_obs'])**2 \
+                        - (self.model.x['x'][1] - self.model.tvp['x_moving_obs'])**2 \
+                        + (self.r + config.r_moving_obs)**2
+            mpc.set_nl_cons('moving_obstacle_constraint', obs_avoid, ub=0)
 
         return mpc
 
@@ -224,8 +237,7 @@ class MPC:
         h = (x[0] - x_obs)**2 + (x[1] - y_obs)**2 - (self.r + r_obs)**2
         return h
 
-    @staticmethod
-    def set_tvp_for_mpc(mpc):
+    def set_tvp_for_mpc(self, mpc):
         """Sets the trajectory to be followed for trajectory tracking.
 
         Inputs:
@@ -236,16 +248,23 @@ class MPC:
         tvp_struct_mpc = mpc.get_tvp_template()
 
         def tvp_fun_mpc(t_now):
-            # Trajectory to follow
-            if config.trajectory == "circular":
-                x_traj = config.A*cos(config.w*t_now)
-                y_traj = config.A*sin(config.w*t_now)
-            else:
-                x_traj = config.A*cos(config.w*t_now)/(sin(config.w*t_now)**2 + 1)
-                y_traj = config.A*sin(config.w*t_now)*cos(config.w*t_now)/(sin(config.w*t_now)**2 + 1)
+            if self.control_type == "traj_tracking":
+                # Trajectory to follow
+                if config.trajectory == "circular":
+                    x_traj = config.A*cos(config.w*t_now)
+                    y_traj = config.A*sin(config.w*t_now)
+                else:  # Infinity
+                    x_traj = config.A*cos(config.w*t_now)/(sin(config.w*t_now)**2 + 1)
+                    y_traj = config.A*sin(config.w*t_now)*cos(config.w*t_now)/(sin(config.w*t_now)**2 + 1)
 
-            tvp_struct_mpc['_tvp', :, 'x_set_point'] = x_traj
-            tvp_struct_mpc['_tvp', :, 'y_set_point'] = y_traj
+                tvp_struct_mpc['_tvp', :, 'x_set_point'] = x_traj
+                tvp_struct_mpc['_tvp', :, 'y_set_point'] = y_traj
+
+            if self.moving_obstacles_on is True:
+                # Moving obstacles trajectory
+                tvp_struct_mpc['_tvp', :, 'x_moving_obs'] = 0.2*t_now
+                tvp_struct_mpc['_tvp', :, 'y_moving_obs'] = 0.6
+
             return tvp_struct_mpc
 
         mpc.set_tvp_fun(tvp_fun_mpc)
@@ -260,8 +279,8 @@ class MPC:
         simulator = do_mpc.simulator.Simulator(self.model)
         simulator.set_param(t_step=self.Ts)
 
-        # If trajectory tracking: Add time-varying parameters
-        if self.control_type == "traj_tracking":
+        # If trajectory tracking or moving obstacles: Add time-varying parameters
+        if self.control_type == "traj_tracking" or self.moving_obstacles_on is True:
             tvp_template = simulator.get_tvp_template()
 
             def tvp_fun(t_now):

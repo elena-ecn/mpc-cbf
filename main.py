@@ -23,6 +23,7 @@ def main():
     plotter.plot_predictions()
     plotter.plot_path()
     plotter.create_animation()
+    plotter.create_path_animation()
 
 
 if __name__ == '__main__':
