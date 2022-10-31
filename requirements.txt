@@ -1,0 +1,7 @@
+casadi
+cvxopt
+do-mpc
+matplotlib
+numpy
+scipy
+seaborn
