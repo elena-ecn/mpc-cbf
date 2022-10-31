@@ -61,7 +61,7 @@ class Plotter:
         plt.savefig('images/predictions.png')
         plt.show()
 
-    def create_animation(self):
+    def create_trajectories_animation(self):
         """Creates an animation with the predictions."""
         mpc_graphics = do_mpc.graphics.Graphics(self.mpc.data)
         mpc_graphics.reset_axes()
@@ -82,7 +82,7 @@ class Plotter:
         fig.suptitle('Trajectories & Predictions')
 
         anim = FuncAnimation(fig, self.update, frames=config.sim_time, repeat=False, fargs=(mpc_graphics,))
-        anim.save('images/anim.gif', writer=ImageMagickWriter(fps=3))
+        anim.save('images/trajectories_animation.gif', writer=ImageMagickWriter(fps=3))
 
     def update(self, t_ind, mpc_graphics):
         """Plots the results and predictions at time t_ind for the animation."""
@@ -106,7 +106,7 @@ class Plotter:
 
         # Plot goal or reference trajectory
         if config.control_type == "setpoint":
-            ax.plot(self.mpc.data['_x'][-1, 0], self.mpc.data['_x'][-1, 1], 'b.', label="Final position")
+            ax.add_patch(plt.Circle((self.mpc.data['_x'][-1, 0], self.mpc.data['_x'][-1, 1]), config.r, color='b'))
             ax.plot(config.goal[0], config.goal[1], 'g*', label="Goal")
         else:
             ax.plot(self.mpc.data['_tvp', 'x_set_point'], self.mpc.data['_tvp', 'y_set_point'], 'k--', label="Reference trajectory")
@@ -114,14 +114,24 @@ class Plotter:
         # Plot moving obstacle trajectory
         if config.moving_obstacles_on is True:
             for i in range(len(config.moving_obs)):
-                ax.plot(self.mpc.data['_tvp', 'x_moving_obs'+str(i)], self.mpc.data['_tvp', 'y_moving_obs'+str(i)], 'k', label="Moving Obstacle")
+                # Plot final position
+                ax.add_patch(plt.Circle((self.mpc.data['_tvp', 'x_moving_obs'+str(i)][-1],
+                                         self.mpc.data['_tvp', 'y_moving_obs'+str(i)][-1]),
+                                        config.moving_obs[i][4], color='k'))
+                # Plot path
+                ax.plot(self.mpc.data['_tvp', 'x_moving_obs'+str(i)], self.mpc.data['_tvp', 'y_moving_obs'+str(i)],
+                        'k:', label="Moving Obstacle path", alpha=0.3)
 
-        # Plot (extended) static obstacles
+        # Plot static obstacles
         if config.static_obstacles_on:
             for x_obs, y_obs, r_obs in config.obs:
-                ax.add_patch(plt.Circle((x_obs, y_obs), r_obs+config.r, color='k'))
+                ax.add_patch(plt.Circle((x_obs, y_obs), r_obs, color='k'))
 
-        plt.legend(loc="upper left")
+        # Only show unique legends
+        handles, labels = plt.gca().get_legend_handles_labels()
+        by_label = dict(zip(labels, handles))
+        plt.legend(by_label.values(), by_label.keys(), loc="upper left")
+
         plt.savefig('images/path.png')
         plt.show()
 
@@ -204,6 +214,6 @@ class Plotter:
                 ax.patches.remove(globals()['moving_obs%s' % str(i_obs)])
                 globals()['moving_obs%s' % str(i_obs)] = Circle((self.mpc.data['_tvp', 'x_moving_obs'+str(i_obs)][i],
                                                                  self.mpc.data['_tvp', 'y_moving_obs'+str(i_obs)][i]),
-                                                                config.moving_obs[i_obs][4], color='k')
+                                                                config.moving_obs[i_obs][4], color='k', zorder=2)
                 ax.add_patch(globals()['moving_obs%s' % str(i_obs)])
         return
