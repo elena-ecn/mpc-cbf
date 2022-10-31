@@ -6,7 +6,8 @@ sim_time = 200                             # Total simulation time steps
 Ts = 0.1                                   # Sampling time [s]
 T_horizon = 20                             # Prediction horizon time steps
 
-gamma = 0.5                                # CBF parameter in [0,1]
+gamma = 0.4                                # CBF parameter in [0,1]
+safety_dist = 0.03                         # Safety distance
 x0 = np.array([0, 0, 0])                   # Initial state
 
 # Actuator limits
@@ -14,7 +15,7 @@ v_limit = 0.26                             # Linear velocity limit
 omega_limit = 1.8                          # Angular velocity limit
 
 # Type of control
-controller = "MPC-DC"                     # Options: "MPC-CBF", "MPC-DC"
+controller = "MPC-CBF"                     # Options: "MPC-CBF", "MPC-DC"
 control_type = "setpoint"                  # Options: "setpoint", "traj_tracking"
 trajectory = "infinity"                    # Type of trajectory. Options: circular, infinity
 
@@ -28,7 +29,7 @@ Q_tr = np.diag([150, 150, 0.005])          # State cost matrix
 R_tr = np.array([2, 0.5])                  # Controls cost matrix
 
 # Obstacles
-static_obstacles_on = False                 # Whether to have obstacles or not
+static_obstacles_on = True                 # Whether to have obstacles or not
 moving_obstacles_on = True                 # Whether to have moving obstacles or not
 r = 0.1                                    # Robot radius (for obstacle avoidance)
 
@@ -41,9 +42,9 @@ moving_obs = [(0.2, 0, 0, 0.6, 0.1),
 # obs = [(-0.2, 0.8, 0.03),
 #        (0.0, -0.75, 0.02)]               # Define obstacles as list of tuples (x,y,radius)
 
-# Go-to-goal scenarios: 1-3, 6
+# Go-to-goal scenarios: 1-3
 # Trajectory tracking scenarios: 4-5
-scenario = 4                               # Options: 1-6 or None
+scenario = 1                               # Options: 1-5 or None
 
 
 # ------------------------------------------------------------------------------

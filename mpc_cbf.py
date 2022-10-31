@@ -25,6 +25,7 @@ class MPC:
         if self.control_type == "setpoint":      # Go-to-goal
             self.goal = config.goal              # Robot's goal pose
         self.gamma = config.gamma                # CBF parameter
+        self.safety_dist = config.safety_dist    # Safety distance
 
         self.model = self.define_model()
         self.mpc = self.define_mpc()
@@ -181,7 +182,7 @@ class MPC:
             for x_obs, y_obs, r_obs in self.obs:
                 obs_avoid = - (self.model.x['x'][0] - x_obs)**2 \
                             - (self.model.x['x'][1] - y_obs)**2 \
-                            + (self.r + r_obs)**2
+                            + (self.r + r_obs + self.safety_dist)**2
                 mpc.set_nl_cons('obstacle_constraint'+str(i), obs_avoid, ub=0)
                 i += 1
 
@@ -189,7 +190,7 @@ class MPC:
             for i in range(len(self.moving_obs)):
                 obs_avoid = - (self.model.x['x'][0] - self.model.tvp['x_moving_obs'+str(i)])**2 \
                             - (self.model.x['x'][1] - self.model.tvp['y_moving_obs'+str(i)])**2 \
-                            + (self.r + self.moving_obs[i][4])**2
+                            + (self.r + self.moving_obs[i][4] + self.safety_dist)**2
                 mpc.set_nl_cons('moving_obstacle_constraint'+str(i), obs_avoid, ub=0)
 
         return mpc
@@ -247,7 +248,7 @@ class MPC:
           - h(casadi.casadi.SX): The Control Barrier Function
         """
         x_obs, y_obs, r_obs = obstacle
-        h = (x[0] - x_obs)**2 + (x[1] - y_obs)**2 - (self.r + r_obs)**2
+        h = (x[0] - x_obs)**2 + (x[1] - y_obs)**2 - (self.r + r_obs + self.safety_dist)**2
         return h
 
     def set_tvp_for_mpc(self, mpc):
