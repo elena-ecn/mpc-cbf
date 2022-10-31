@@ -17,7 +17,9 @@ class MPC:
         self.static_obstacles_on = config.static_obstacles_on  # Whether to have static obstacles
         self.moving_obstacles_on = config.moving_obstacles_on  # Whether to have moving obstacles
         if self.static_obstacles_on:
-            self.obs = config.obs                # Obstacles
+            self.obs = config.obs                # Static Obstacles
+        if self.moving_obstacles_on:             # Moving obstacles
+            self.moving_obs = config.moving_obs
         self.r = config.r                        # Robot radius
         self.control_type = config.control_type  # "setpoint" or "traj_tracking"
         if self.control_type == "setpoint":      # Go-to-goal
@@ -64,8 +66,9 @@ class MPC:
 
         # Moving obstacle (define time-varying parameter for its position)
         if self.moving_obstacles_on is True:
-            model.set_variable('_tvp', 'x_moving_obs')
-            model.set_variable('_tvp', 'y_moving_obs')
+            for i in range(len(self.moving_obs)):
+                model.set_variable('_tvp', 'x_moving_obs'+str(i))
+                model.set_variable('_tvp', 'y_moving_obs'+str(i))
 
         # Setup model
         model.setup()
@@ -183,10 +186,11 @@ class MPC:
                 i += 1
 
         if self.moving_obstacles_on:
-            obs_avoid = - (self.model.x['x'][0] - self.model.tvp['x_moving_obs'])**2 \
-                        - (self.model.x['x'][1] - self.model.tvp['x_moving_obs'])**2 \
-                        + (self.r + config.r_moving_obs)**2
-            mpc.set_nl_cons('moving_obstacle_constraint', obs_avoid, ub=0)
+            for i in range(len(self.moving_obs)):
+                obs_avoid = - (self.model.x['x'][0] - self.model.tvp['x_moving_obs'+str(i)])**2 \
+                            - (self.model.x['x'][1] - self.model.tvp['x_moving_obs'+str(i)])**2 \
+                            + (self.r + self.moving_obs[i][4])**2
+                mpc.set_nl_cons('moving_obstacle_constraint'+str(i), obs_avoid, ub=0)
 
         return mpc
 
@@ -225,10 +229,11 @@ class MPC:
                 cbf_constraints.append(-h_k1 + (1-self.gamma)*h_k)
 
         if self.moving_obstacles_on:
-            obs = (self.model.tvp['x_moving_obs'], self.model.tvp['y_moving_obs'], config.r_moving_obs)
-            h_k1 = self.h(x_k1, obs)
-            h_k = self.h(self.model.x['x'], obs)
-            cbf_constraints.append(-h_k1 + (1-self.gamma)*h_k)
+            for i in range(len(self.moving_obs)):
+                obs = (self.model.tvp['x_moving_obs'+str(i)], self.model.tvp['y_moving_obs'+str(i)], self.moving_obs[i][4])
+                h_k1 = self.h(x_k1, obs)
+                h_k = self.h(self.model.x['x'], obs)
+                cbf_constraints.append(-h_k1 + (1-self.gamma)*h_k)
 
         return cbf_constraints
 
@@ -270,8 +275,9 @@ class MPC:
 
             if self.moving_obstacles_on is True:
                 # Moving obstacles trajectory
-                tvp_struct_mpc['_tvp', :, 'x_moving_obs'] = 0.2*t_now
-                tvp_struct_mpc['_tvp', :, 'y_moving_obs'] = 0.6
+                for i in range(len(self.moving_obs)):
+                    tvp_struct_mpc['_tvp', :, 'x_moving_obs'+str(i)] = self.moving_obs[i][0]*t_now + self.moving_obs[i][1]
+                    tvp_struct_mpc['_tvp', :, 'y_moving_obs'+str(i)] = self.moving_obs[i][2]*t_now + self.moving_obs[i][3]
 
             return tvp_struct_mpc
 

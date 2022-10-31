@@ -113,7 +113,8 @@ class Plotter:
 
         # Plot moving obstacle trajectory
         if config.moving_obstacles_on is True:
-            ax.plot(self.mpc.data['_tvp', 'x_moving_obs'], self.mpc.data['_tvp', 'y_moving_obs'], 'k', label="Moving Obstacle")
+            for i in range(len(config.moving_obs)):
+                ax.plot(self.mpc.data['_tvp', 'x_moving_obs'+str(i)], self.mpc.data['_tvp', 'y_moving_obs'+str(i)], 'k', label="Moving Obstacle")
 
         # Plot (extended) static obstacles
         if config.static_obstacles_on:
@@ -149,8 +150,9 @@ class Plotter:
 
         # Moving obstacle
         if config.moving_obstacles_on is True:
-            globals()['moving_obs'] = Circle((0, 0), config.r_moving_obs, color='k')
-            ax.add_patch(globals()['moving_obs'])
+            for i in range(len(config.moving_obs)):
+                globals()['moving_obs%s' % str(i)] = Circle((0, 0), 0, color='k')
+                ax.add_patch(globals()['moving_obs%s' % str(i)])
 
         # Robot's heading indicator
         globals()['robot_heading'] = plt.Arrow(x=0, y=0, dx=0, dy=0, color='k', width=0.1, linewidth=0.6)
@@ -198,10 +200,10 @@ class Plotter:
 
         # Moving obstacle
         if config.moving_obstacles_on is True:
-            ax.patches.remove(globals()['moving_obs'])
-            globals()['moving_obs'] = Circle((self.mpc.data['_tvp', 'x_moving_obs'][i], self.mpc.data['_tvp', 'y_moving_obs'][i]),
-                                             config.r_moving_obs,
-                                             color='k')
-            ax.add_patch(globals()['moving_obs'])
-
+            for i_obs in range(len(config.moving_obs)):
+                ax.patches.remove(globals()['moving_obs%s' % str(i_obs)])
+                globals()['moving_obs%s' % str(i_obs)] = Circle((self.mpc.data['_tvp', 'x_moving_obs'+str(i_obs)][i],
+                                                                 self.mpc.data['_tvp', 'y_moving_obs'+str(i_obs)][i]),
+                                                                config.moving_obs[i_obs][4], color='k')
+                ax.add_patch(globals()['moving_obs%s' % str(i_obs)])
         return

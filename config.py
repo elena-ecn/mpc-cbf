@@ -32,7 +32,12 @@ static_obstacles_on = False                 # Whether to have obstacles or not
 moving_obstacles_on = True                 # Whether to have moving obstacles or not
 r = 0.1                                    # Robot radius (for obstacle avoidance)
 
-r_moving_obs = 0.1
+# Define moving obstacles as list of tuples (ax,bx,ay,by,radius)
+# where each obstacle follows a linear trajectory x=ax*t+bx, y=ay*t+by
+moving_obs = [(0.2, 0, 0, 0.6, 0.1),
+              (-0.2, 1.0, 0, 0.4, 0.05)]
+
+# Static obstacles
 # obs = [(-0.2, 0.8, 0.03),
 #        (0.0, -0.75, 0.02)]               # Define obstacles as list of tuples (x,y,radius)
 
