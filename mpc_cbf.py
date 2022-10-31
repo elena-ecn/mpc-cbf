@@ -151,6 +151,10 @@ class MPC:
         mpc.bounds['lower', '_u', 'u'] = -max_u
         mpc.bounds['upper', '_u', 'u'] = max_u
 
+        # If trajectory tracking or moving obstacles: Define time-varying parameters
+        if self.control_type == "traj_tracking" or self.moving_obstacles_on is True:
+            mpc = self.set_tvp_for_mpc(mpc)
+
         # Add safety constraints
         if self.static_obstacles_on or self.moving_obstacles_on:
             if config.controller == "MPC-DC":
@@ -159,10 +163,6 @@ class MPC:
             else:
                 # MPC-CBF: Add CBF constraints
                 mpc = self.add_cbf_constraints(mpc)
-
-        # If trajectory tracking or moving obstacles: Define time-varying parameters
-        if self.control_type == "traj_tracking" or self.moving_obstacles_on is True:
-            mpc = self.set_tvp_for_mpc(mpc)
 
         mpc.setup()
 
@@ -188,7 +188,7 @@ class MPC:
         if self.moving_obstacles_on:
             for i in range(len(self.moving_obs)):
                 obs_avoid = - (self.model.x['x'][0] - self.model.tvp['x_moving_obs'+str(i)])**2 \
-                            - (self.model.x['x'][1] - self.model.tvp['x_moving_obs'+str(i)])**2 \
+                            - (self.model.x['x'][1] - self.model.tvp['y_moving_obs'+str(i)])**2 \
                             + (self.r + self.moving_obs[i][4])**2
                 mpc.set_nl_cons('moving_obstacle_constraint'+str(i), obs_avoid, ub=0)
 
