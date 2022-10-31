@@ -146,6 +146,9 @@ class Plotter:
         plt.title("Robot path")
         plt.tight_layout()
         ax.axis('equal')
+        offset = 0.5
+        ax.set_xlim([min(self.mpc.data['_x'][:, 0])-offset, max(self.mpc.data['_x'][:, 0])+offset])
+        ax.set_ylim([min(self.mpc.data['_x'][:, 1])-offset, max(self.mpc.data['_x'][:, 1])+offset])
 
         # Plot goal or reference trajectory
         if config.control_type == "setpoint":
@@ -182,7 +185,7 @@ class Plotter:
         ani = FuncAnimation(fig, self.animate_path, frames=len(self.mpc.data['_x'][:, 0]), interval=config.Ts*1000, repeat=False)
         plt.show()
         # Save animation as gif
-        ani.save('images/path_animation.gif', writer=ImageMagickWriter(fps=3))
+        ani.save('images/path_animation.gif', writer=ImageMagickWriter(fps=config.sim_time/config.Ts))
 
     def animate_path(self, i):
         """Draws each frame of the animation."""
