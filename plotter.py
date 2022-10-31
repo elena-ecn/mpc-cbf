@@ -115,8 +115,8 @@ class Plotter:
         if config.moving_obstacles_on is True:
             ax.plot(self.mpc.data['_tvp', 'x_moving_obs'], self.mpc.data['_tvp', 'y_moving_obs'], 'k', label="Moving Obstacle")
 
-        # Plot (extended) obstacles
-        if config.obstacles_on:
+        # Plot (extended) static obstacles
+        if config.static_obstacles_on:
             for x_obs, y_obs, r_obs in config.obs:
                 ax.add_patch(plt.Circle((x_obs, y_obs), r_obs+config.r, color='k'))
 
@@ -143,7 +143,7 @@ class Plotter:
             ax.plot(self.mpc.data['_tvp', 'x_set_point'], self.mpc.data['_tvp', 'y_set_point'], 'k--', label="Reference trajectory")
 
         # Static obstacles
-        if config.obstacles_on:
+        if config.static_obstacles_on:
             for x_obs, y_obs, r_obs in config.obs:
                 ax.add_patch(plt.Circle((x_obs, y_obs), r_obs, color='k'))
 

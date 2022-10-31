@@ -14,11 +14,11 @@ class MPC:
         self.omega_limit = config.omega_limit    # Angular velocity limit
         self.R = config.R                        # Controls cost matrix
         self.Q = config.Q                        # State cost matrix
-        self.obstacles_on = config.obstacles_on  # Whether to have obstacles
+        self.static_obstacles_on = config.static_obstacles_on  # Whether to have static obstacles
         self.moving_obstacles_on = config.moving_obstacles_on  # Whether to have moving obstacles
-        if self.obstacles_on:
+        if self.static_obstacles_on:
             self.obs = config.obs                # Obstacles
-            self.r = config.r                    # Robot radius (for obstacle avoidance)
+        self.r = config.r                        # Robot radius
         self.control_type = config.control_type  # "setpoint" or "traj_tracking"
         if self.control_type == "setpoint":      # Go-to-goal
             self.goal = config.goal              # Robot's goal pose
@@ -149,7 +149,7 @@ class MPC:
         mpc.bounds['upper', '_u', 'u'] = max_u
 
         # Add safety constraints
-        if self.obstacles_on:
+        if self.static_obstacles_on or self.moving_obstacles_on:
             if config.controller == "MPC-DC":
                 # MPC-DC: Add obstacle avoidance constraints
                 mpc = self.add_obstacle_constraints(mpc)
@@ -173,15 +173,16 @@ class MPC:
         Returns:
           - mpc(do_mpc.controller.MPC): The mpc controller with obstacle constraints added
         """
-        i = 0
-        for x_obs, y_obs, r_obs in self.obs:
-            obs_avoid = - (self.model.x['x'][0] - x_obs)**2 \
-                        - (self.model.x['x'][1] - y_obs)**2 \
-                        + (self.r + r_obs)**2
-            mpc.set_nl_cons('obstacle_constraint'+str(i), obs_avoid, ub=0)
-            i += 1
+        if self.static_obstacles_on:
+            i = 0
+            for x_obs, y_obs, r_obs in self.obs:
+                obs_avoid = - (self.model.x['x'][0] - x_obs)**2 \
+                            - (self.model.x['x'][1] - y_obs)**2 \
+                            + (self.r + r_obs)**2
+                mpc.set_nl_cons('obstacle_constraint'+str(i), obs_avoid, ub=0)
+                i += 1
 
-        if self.moving_obstacles_on is True:  # ToDo
+        if self.moving_obstacles_on:
             obs_avoid = - (self.model.x['x'][0] - self.model.tvp['x_moving_obs'])**2 \
                         - (self.model.x['x'][1] - self.model.tvp['x_moving_obs'])**2 \
                         + (self.r + config.r_moving_obs)**2
@@ -217,7 +218,14 @@ class MPC:
 
         # Compute CBF constraints
         cbf_constraints = []
-        for obs in self.obs:
+        if self.static_obstacles_on:
+            for obs in self.obs:
+                h_k1 = self.h(x_k1, obs)
+                h_k = self.h(self.model.x['x'], obs)
+                cbf_constraints.append(-h_k1 + (1-self.gamma)*h_k)
+
+        if self.moving_obstacles_on:
+            obs = (self.model.tvp['x_moving_obs'], self.model.tvp['y_moving_obs'], config.r_moving_obs)
             h_k1 = self.h(x_k1, obs)
             h_k = self.h(self.model.x['x'], obs)
             cbf_constraints.append(-h_k1 + (1-self.gamma)*h_k)

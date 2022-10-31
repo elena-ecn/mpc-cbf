@@ -2,7 +2,7 @@
 
 import numpy as np
 
-sim_time = 100                             # Total simulation time steps
+sim_time = 200                             # Total simulation time steps
 Ts = 0.1                                   # Sampling time [s]
 T_horizon = 20                             # Prediction horizon time steps
 
@@ -15,7 +15,7 @@ omega_limit = 1.8                          # Angular velocity limit
 
 # Type of control
 controller = "MPC-DC"                     # Options: "MPC-CBF", "MPC-DC"
-control_type = "setpoint"             # Options: "setpoint", "traj_tracking"
+control_type = "setpoint"                  # Options: "setpoint", "traj_tracking"
 trajectory = "infinity"                    # Type of trajectory. Options: circular, infinity
 
 # For setpoint control:
@@ -28,7 +28,7 @@ Q_tr = np.diag([150, 150, 0.005])          # State cost matrix
 R_tr = np.array([2, 0.5])                  # Controls cost matrix
 
 # Obstacles
-obstacles_on = False                        # Whether to have obstacles or not
+static_obstacles_on = False                 # Whether to have obstacles or not
 moving_obstacles_on = True                 # Whether to have moving obstacles or not
 r = 0.1                                    # Robot radius (for obstacle avoidance)
 
