@@ -104,12 +104,14 @@ class Plotter:
         # Plot initial position
         ax.plot(config.x0[0], config.x0[1], 'r.', label="Initial position")
 
+        # Plot robot in final position
+        ax.add_patch(plt.Circle((self.mpc.data['_x'][-1, 0], self.mpc.data['_x'][-1, 1]), config.r, color='b', zorder=2))
+
         # Plot goal or reference trajectory
         if config.control_type == "setpoint":
-            ax.add_patch(plt.Circle((self.mpc.data['_x'][-1, 0], self.mpc.data['_x'][-1, 1]), config.r, color='b'))
             ax.plot(config.goal[0], config.goal[1], 'g*', label="Goal")
         else:
-            ax.plot(self.mpc.data['_tvp', 'x_set_point'], self.mpc.data['_tvp', 'y_set_point'], 'k--', label="Reference trajectory")
+            ax.plot(self.mpc.data['_tvp', 'x_set_point'], self.mpc.data['_tvp', 'y_set_point'], 'k--', label="Reference trajectory", zorder=0)
 
         # Plot moving obstacle trajectory
         if config.moving_obstacles_on is True:
