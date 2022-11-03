@@ -5,6 +5,18 @@ import config
 
 
 class MPC:
+    """MPC-CBF Optimization problem:
+
+    min Σ_{k=0}{N-1} 1/2*x'_k^T*Q*x'_k + 1/2*u_k^T*R*u_k   over u
+    s.t.
+        x_{k+1} = x_k + B*u_k*T_s
+        x_min <= x_k <= x_max
+        u_min <= u_k <= u_max
+        x_0 = x(0)
+        Δh(x_k, u_k) >= -γ*h(x_k)
+
+    where x'_k = x_{des_k} - x_k
+    """
     def __init__(self):
         self.sim_time = config.sim_time          # Total simulation time steps
         self.Ts = config.Ts                      # Sampling time
@@ -36,6 +48,7 @@ class MPC:
     def define_model(self):
         """Configures the dynamical model of the system (and part of the objective function).
 
+        x_{k+1} = x_k + B*u_k*T_s
         Returns:
           - model(do_mpc.model.Model): The system model
         """
