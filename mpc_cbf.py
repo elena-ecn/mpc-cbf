@@ -38,6 +38,7 @@ class MPC:
             self.goal = config.goal              # Robot's goal pose
         self.gamma = config.gamma                # CBF parameter
         self.safety_dist = config.safety_dist    # Safety distance
+        self.controller = config.controller      # Type of control
 
         self.model = self.define_model()
         self.mpc = self.define_mpc()
@@ -171,7 +172,7 @@ class MPC:
 
         # Add safety constraints
         if self.static_obstacles_on or self.moving_obstacles_on:
-            if config.controller == "MPC-DC":
+            if self.controller == "MPC-DC":
                 # MPC-DC: Add obstacle avoidance constraints
                 mpc = self.add_obstacle_constraints(mpc)
             else:
@@ -332,4 +333,5 @@ class MPC:
         for k in range(self.sim_time):
             u0 = self.mpc.make_step(x0)
             y_next = self.simulator.make_step(u0)
+            # y_next = self.simulator.make_step(u0, w0=10**(-4)*np.random.randn(3, 1))  # ToDo Optional Additive process noise
             x0 = self.estimator.make_step(y_next)

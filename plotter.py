@@ -4,6 +4,7 @@ from matplotlib.patches import Circle
 import do_mpc
 import seaborn as sns
 import numpy as np
+import pandas as pd
 
 import config
 
@@ -222,3 +223,112 @@ class Plotter:
                                                                 config.moving_obs[i_obs][4], color='k', zorder=2)
                 ax.add_patch(globals()['moving_obs%s' % str(i_obs)])
         return
+
+
+def plot_path_comparisons(results):
+    """Plots the robot path for each method and different gamma values."""
+    sns.set_theme()
+    fig, ax = plt.subplots(figsize=(9, 5))
+
+    gammas = [0.1, 0.2, 0.3, 1.0]
+    for i in range(len(results)-1):
+        X = results[i+1]['mpc']['_x']
+        label = "MPC-CBF ($\gamma={}$)".format(gammas[i])
+        ax.plot(X[:, 0], X[:, 1], label=label)
+
+    X_dc = results[0]['mpc']['_x']
+    ax.plot(X_dc[:, 0], X_dc[:, 1], 'k--', label="MPC-DC")
+
+    ax.set_xlabel('x [m]')
+    ax.set_ylabel('y [m]')
+    plt.title("Robot path (N=10)")
+    plt.tight_layout()
+    ax.axis('equal')
+
+    # Plot initial position
+    x0 = X_dc[0, :2]
+    ax.plot(x0[0], x0[1], 'b.', label="Initial position")
+
+    # Plot goal
+    ax.plot(config.goal[0], config.goal[1], 'g*', label="Goal")
+
+    # Plot static obstacles
+    if config.static_obstacles_on:
+        for x_obs, y_obs, r_obs in config.obs:
+            ax.add_patch(plt.Circle((x_obs, y_obs), r_obs + config.r, color='k'))
+
+    # Only show unique legends
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    plt.legend(by_label.values(), by_label.keys(), loc="upper left")
+
+    plt.savefig('images/path_comparisons.png')
+    plt.show()
+
+
+def plot_cost_comparisons(costs_dc, costs_cbf, gamma):
+    """Plots the objective function cost for each method for all experiments."""
+
+    # Plot cost vs experiment
+    sns.set_theme()
+    fig, ax = plt.subplots(figsize=(9, 5))
+    t = np.linspace(1, len(costs_cbf), num=len(costs_cbf))
+    ax.plot(t, costs_cbf, 'o-', label="MPC-CBF ($\gamma={}$)".format(gamma))
+    ax.plot(t, costs_dc, 'o-', label="MPC-DC")
+    ax.set_xlabel('Experiment')
+    ax.set_ylabel('Cost')
+    plt.xticks(t)
+    plt.title("Total Objective Function Cost (N=10)")
+    plt.tight_layout()
+    plt.legend(loc="upper right")
+    plt.savefig('images/cost_comparisons.png')
+    plt.show()
+
+    # Convert data to df
+    df_costs_cbf = pd.DataFrame({'Controller': "MPC-CBF ($\gamma={}$)".format(gamma), 'Costs': costs_cbf})
+    df_costs_dc = pd.DataFrame({'Controller': "MPC-DC", 'Costs': costs_dc})
+    costs_df = pd.concat([df_costs_cbf, df_costs_dc])
+
+    # Plot average cost of all experiments vs method
+    sns.set_theme()
+    plt.figure(figsize=(9, 5))
+    sns.barplot(data=costs_df, x='Controller', y='Costs', capsize=.2)
+    plt.title("Total Cost Comparison for {} experiments".format(len(costs_cbf)))
+    plt.xlabel('Controller')
+    plt.ylabel('Average Total Costs')
+    plt.savefig('images/cost_comparisons_barplot.png')
+    plt.show()
+
+
+def plot_min_distance_comparison(min_distances_cbf, min_distances_dc, gamma):
+    """Plots the minimum distance for each method for all experiments."""
+
+    # Plot min distance vs experiment
+    sns.set_theme()
+    fig, ax = plt.subplots(figsize=(9, 5))
+    t = np.linspace(1, len(min_distances_cbf), num=len(min_distances_cbf))
+    ax.plot(t, min_distances_cbf, 'o-', label="MPC-CBF ($\gamma={}$)".format(gamma))
+    ax.plot(t, min_distances_dc, 'o-', label="MPC-DC")
+    ax.set_xlabel('Experiment')
+    ax.set_ylabel('Minimum distance')
+    plt.xticks(t)
+    plt.title("Minimum Distances (N=10)")
+    plt.tight_layout()
+    plt.legend(loc="upper right")
+    plt.savefig('images/min_distances_comparisons.png')
+    plt.show()
+
+    # Convert data to df
+    df_cbf = pd.DataFrame({'Controller': "MPC-CBF ($\gamma={}$)".format(gamma), 'Dist': min_distances_cbf})
+    df_dc = pd.DataFrame({'Controller': "MPC-DC", 'Dist': min_distances_dc})
+    dist_df = pd.concat([df_cbf, df_dc])
+
+    # Plot average cost of all experiments vs method
+    sns.set_theme()
+    plt.figure(figsize=(9, 5))
+    sns.barplot(data=dist_df, x='Controller', y='Dist', capsize=.2)
+    plt.title("Total Cost Comparison for {} experiments".format(len(min_distances_cbf)))
+    plt.xlabel('Controller')
+    plt.ylabel('Average Minimum Distances')
+    plt.savefig('images/min_distances_comparisons_barplot.png')
+    plt.show()
