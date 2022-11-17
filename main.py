@@ -15,16 +15,18 @@ def main():
     np.random.seed(99)
 
     # Define controller & run simulation
-    controller = MPC()
+    mObs = util.MovingObs()
+    controller = MPC(mObs)
     controller.run_simulation()  # Closed-loop control simulation
 
     # Plots
     plotter = Plotter(controller)
-    # plotter.plot_results()
-    # plotter.plot_predictions()
+    plotter.plot_results()
+    plotter.plot_predictions()
     plotter.plot_path()
-    # plotter.create_trajectories_animation()
-    # plotter.create_path_animation()
+    plotter.create_trajectories_animation()
+    plotter.create_path_animation()
+    plotter.plot_cbf()
 
     # Store results
     # util.save_mpc_results(controller)

@@ -17,7 +17,7 @@ class MPC:
 
     where x'_k = x_{des_k} - x_k
     """
-    def __init__(self):
+    def __init__(self, m_obs):
         self.sim_time = config.sim_time          # Total simulation time steps
         self.Ts = config.Ts                      # Sampling time
         self.T_horizon = config.T_horizon        # Prediction horizon
@@ -39,6 +39,7 @@ class MPC:
         self.gamma = config.gamma                # CBF parameter
         self.safety_dist = config.safety_dist    # Safety distance
         self.controller = config.controller      # Type of control
+        self.m_obs = m_obs                       # Moving obs and trajectories for scenario 7
 
         self.model = self.define_model()
         self.mpc = self.define_mpc()
@@ -87,7 +88,6 @@ class MPC:
 
         # Setup model
         model.setup()
-
         return model
 
     @staticmethod
@@ -134,7 +134,6 @@ class MPC:
             X[2] = model.x['x', 2] - theta_des
 
         cost_expression = transpose(X)@self.Q@X
-
         return model, cost_expression
 
     def define_mpc(self):
@@ -180,7 +179,6 @@ class MPC:
                 mpc = self.add_cbf_constraints(mpc)
 
         mpc.setup()
-
         return mpc
 
     def add_obstacle_constraints(self, mpc):
@@ -222,7 +220,6 @@ class MPC:
         for cbc in cbf_constraints:
             mpc.set_nl_cons('cbf_constraint'+str(i), cbc, ub=0)
             i += 1
-
         return mpc
 
     def get_cbf_constraints(self):
@@ -281,18 +278,28 @@ class MPC:
                 if config.trajectory == "circular":
                     x_traj = config.A*cos(config.w*t_now)
                     y_traj = config.A*sin(config.w*t_now)
-                else:  # Infinity
+                elif config.trajectory == "infinity":
                     x_traj = config.A*cos(config.w*t_now)/(sin(config.w*t_now)**2 + 1)
                     y_traj = config.A*sin(config.w*t_now)*cos(config.w*t_now)/(sin(config.w*t_now)**2 + 1)
+                elif config.trajectory == "square":
+                    x_traj, y_traj = self.m_obs.get_square_trajectory(t_now)
+                else:
+                    print("Select one of the available options for trajectory.")
+                    exit()
 
                 tvp_struct_mpc['_tvp', :, 'x_set_point'] = x_traj
                 tvp_struct_mpc['_tvp', :, 'y_set_point'] = y_traj
 
             if self.moving_obstacles_on is True:
                 # Moving obstacles trajectory
-                for i in range(len(self.moving_obs)):
-                    tvp_struct_mpc['_tvp', :, 'x_moving_obs'+str(i)] = self.moving_obs[i][0]*t_now + self.moving_obs[i][1]
-                    tvp_struct_mpc['_tvp', :, 'y_moving_obs'+str(i)] = self.moving_obs[i][2]*t_now + self.moving_obs[i][3]
+                if config.scenario == 7:
+                    x_mov_obs, y_mov_obs = self.m_obs.get_square_trajectory_obs(t_now)
+                    tvp_struct_mpc['_tvp', :, 'x_moving_obs0'] = x_mov_obs
+                    tvp_struct_mpc['_tvp', :, 'y_moving_obs0'] = y_mov_obs
+                else:
+                    for i in range(len(self.moving_obs)):
+                        tvp_struct_mpc['_tvp', :, 'x_moving_obs'+str(i)] = self.moving_obs[i][0]*t_now + self.moving_obs[i][1]
+                        tvp_struct_mpc['_tvp', :, 'y_moving_obs'+str(i)] = self.moving_obs[i][2]*t_now + self.moving_obs[i][3]
 
             return tvp_struct_mpc
 
