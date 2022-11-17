@@ -11,6 +11,7 @@ import config
 
 class Plotter:
     def __init__(self, controller):
+        self.controller = controller
         self.mpc = controller.mpc
 
     def plot_results(self):
@@ -33,6 +34,13 @@ class Plotter:
         if config.control_type == "traj_tracking":
             ax[0].plot(self.mpc.data['_time'], self.mpc.data['_tvp', 'x_set_point'], 'k--', lw=1)
             ax[0].plot(self.mpc.data['_time'], self.mpc.data['_tvp', 'y_set_point'], 'k--', lw=1)
+
+        # Plot actuator limits
+        colors = sns.color_palette()
+        ax[1].hlines(y=config.v_limit, xmin=0, xmax=len(self.mpc.data['_time'])*config.Ts, linewidth=1, color=colors[0], linestyle='--', label='v limit')
+        ax[1].hlines(y=config.omega_limit, xmin=0, xmax=len(self.mpc.data['_time'])*config.Ts, linewidth=1, color=colors[1], linestyle='--', label='$\omega$ limit')
+        ax[1].hlines(y=-config.v_limit, xmin=0, xmax=len(self.mpc.data['_time'])*config.Ts, linewidth=1, color=colors[0], linestyle='--')
+        ax[1].hlines(y=-config.omega_limit, xmin=0, xmax=len(self.mpc.data['_time'])*config.Ts, linewidth=1, color=colors[1], linestyle='--')
 
         plt.savefig('images/trajectories.png')
         plt.show()
@@ -137,6 +145,42 @@ class Plotter:
 
         plt.savefig('images/path.png')
         plt.show()
+
+    def plot_cbf(self):
+        """Plots the CBF values."""
+
+        if self.controller.static_obstacles_on or self.controller.moving_obstacles_on:
+            cbfs = []
+            if self.controller.static_obstacles_on:
+                for i in range(len(self.controller.obs)):
+                    h = []
+                    for x in self.mpc.data['_x']:
+                        h.append(self.controller.h(x, self.controller.obs[i]))
+                    cbfs.append(h)
+
+            cbfs_mov = []
+            if self.controller.moving_obstacles_on:
+                for i in range(len(self.controller.moving_obs)):
+                    h = []
+                    for x in self.mpc.data['_x']:
+                        obs = (self.mpc.data['_tvp', 'x_moving_obs'+str(i)][i], self.mpc.data['_tvp', 'y_moving_obs'+str(i)][i], self.controller.moving_obs[i][4])
+                        h.append(self.controller.h(x, obs))
+                    cbfs_mov.append(h)
+
+            sns.set_theme()
+            fig, ax = plt.subplots(figsize=(9, 5))
+            for i in range(len(cbfs)):
+                ax.plot(cbfs[i], label="h_obs"+str(i))
+            for i in range(len(cbfs_mov)):
+                ax.plot(cbfs_mov[i], label="h_mov_obs"+str(i))
+            plt.axhline(y=0, color='k', linestyle='--')
+            ax.set_xlabel('Time [s]')
+            ax.set_ylabel('h [m]')
+            plt.title("CBF Values")
+            plt.tight_layout()
+            plt.legend()
+            plt.savefig('images/cbf.png')
+            plt.show()
 
     def create_path_animation(self):
         """Creates an animation for the robot path in the x-y plane."""
