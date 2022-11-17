@@ -127,11 +127,11 @@ class MPC:
             model.set_variable('_tvp', 'y_set_point')
 
             # Define state error
-            theta_des = np.arctan2(model.x['x', 1] - model.tvp['y_set_point'], model.x['x', 0] - model.tvp['x_set_point'])
+            theta_des = np.arctan2(model.tvp['y_set_point'] - model.x['x', 1], model.tvp['x_set_point'] - model.x['x', 0])
             X = SX.zeros(3, 1)
             X[0] = model.x['x', 0] - model.tvp['x_set_point']
             X[1] = model.x['x', 1] - model.tvp['y_set_point']
-            X[2] = model.x['x', 2] - theta_des
+            X[2] = np.arctan2(sin(theta_des - model.x['x', 2]), cos(theta_des - model.x['x', 2]))
 
         cost_expression = transpose(X)@self.Q@X
         return model, cost_expression
