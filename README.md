@@ -5,7 +5,6 @@ The MPC-CBF optimization problem is given by:
 <br>
 <p align="center" width="100%">
     <img src="images/Display/optimization.png" width="400">
-    <br>Convergence plot
 </p>
 
 Results
