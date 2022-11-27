@@ -15,8 +15,7 @@ def main():
     np.random.seed(99)
 
     # Define controller & run simulation
-    mObs = util.MovingObs()
-    controller = MPC(mObs)
+    controller = MPC()
     controller.run_simulation()  # Closed-loop control simulation
 
     # Plots
@@ -34,7 +33,7 @@ def main():
     # --------------------------------------------------------------------------
     # util.compare_results_by_gamma()                   # Compares the path for each method and gamma value
     # util.run_multiple_experiments(N=50)               # Runs N experiments for each method
-    # util.compare_controller_results(N=50, gamma=0.2)  # Compares total costs and min distances for each method
+    # util.compare_controller_results(N=50, gamma=0.1)  # Compares total costs and min distances for each method
 
 
 if __name__ == '__main__':

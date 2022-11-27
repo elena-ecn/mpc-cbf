@@ -6,7 +6,7 @@ sim_time = 200                             # Total simulation time steps
 Ts = 0.1                                   # Sampling time [s]
 T_horizon = 15                             # Prediction horizon time steps
 
-gamma = 0.8                                # CBF parameter in [0,1]
+gamma = 0.1                                # CBF parameter in [0,1]
 safety_dist = 0.03                         # Safety distance
 x0 = np.array([0, 0, 0])                   # Initial state
 
@@ -17,7 +17,7 @@ omega_limit = 1.8                          # Angular velocity limit
 # Type of control
 controller = "MPC-CBF"                     # Options: "MPC-CBF", "MPC-DC"
 control_type = "setpoint"                  # Options: "setpoint", "traj_tracking"
-trajectory = "infinity"                    # Type of trajectory. Options: circular, infinity, square
+trajectory = "infinity"                    # Type of trajectory. Options: circular, infinity
 
 # For setpoint control:
 goal = [2, 1, np.pi/2]                     # Robot's goal for set point control
@@ -25,7 +25,7 @@ Q_sp = np.diag([15, 15, 0.005])            # State cost matrix
 R_sp = np.array([2, 0.5])                  # Controls cost matrix
 
 # For trajectory tracking control:
-Q_tr = np.diag([300, 300, 0.005])          # State cost matrix
+Q_tr = np.diag([200, 200, 0.005])          # State cost matrix
 R_tr = np.array([0.1, 0.001])              # Controls cost matrix
 
 # Obstacles
@@ -45,8 +45,7 @@ moving_obs = [(0.2, 0, 0, 0.6, 0.1),
 # obs = [(-0.2, 0.8, 0.03),
 #        (0.0, -0.75, 0.02)]               # Define obstacles as list of tuples (x,y,radius)
 
-# Go-to-goal scenarios: 1-3,6
-# Trajectory tracking scenarios: 4-5
+
 scenario = 1                               # Options: 1-6 or None
 
 
@@ -68,8 +67,9 @@ elif scenario == 3:
 elif scenario == 4:
     control_type = "traj_tracking"
     trajectory = "circular"
-    Q_tr = np.diag([1000, 1000, 0.005])    # State cost matrix
-    R_tr = np.array([0.1, 0.00001])        # Controls cost matrix
+    gamma = 0.1
+    R_tr = np.array([0.1, 0.01])        # Controls cost matrix
+    Q_tr = np.diag([800, 800, 2])    # State cost matrix
     obs = [(-0.2, 0.8, 0.1),
            (0.1, -0.8, 0.1)]               # Define obstacles as list of tuples (x,y,radius)
 elif scenario == 5:
@@ -82,16 +82,6 @@ elif scenario == 6:
     moving_obstacles_on = True
     sim_time = 300
     gamma = 0.06
-elif scenario == 7:
-    control_type = "traj_tracking"
-    trajectory = "square"
-    static_obstacles_on = False
-    moving_obstacles_on = True
-    R_tr = np.array([0.01, 1e-5])       # Controls cost matrix
-    Q_tr = np.diag([100, 100, 5])  # State cost matrix
-    x0 = np.array([0, 0.1, np.pi/2])       # Initial state
-    moving_obs = [(0, 0, 0, 0, 0.1)]
-    sim_time = 300                             # Total simulation time steps
 
 # ------------------------------------------------------------------------------
 if control_type == "setpoint":
