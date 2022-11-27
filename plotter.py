@@ -84,7 +84,6 @@ class Plotter:
         ax[0].legend(lines, ['x-position', 'y-position', 'theta'], loc="upper left")
         lines = mpc_graphics.result_lines['_u']
         ax[1].legend(lines, ['v (linear velocity)', '$\omega$ (angular velocity)'], title='controls', loc="upper left")
-
         ax[1].set_xlabel('Time [s]')
         ax[0].set_ylabel('State')
         ax[1].set_ylabel('Input')
@@ -94,7 +93,7 @@ class Plotter:
         anim.save('images/trajectories_animation.gif', writer=ImageMagickWriter(fps=3))
 
     def update(self, t_ind, mpc_graphics):
-        """Plots the results and predictions at time t_ind for the animation."""
+        """Plots the results and predictions at time t_ind for the animation of the predictions."""
         mpc_graphics.plot_results(t_ind)
         mpc_graphics.plot_predictions(t_ind)
         mpc_graphics.reset_axes()
@@ -269,25 +268,25 @@ class Plotter:
         return
 
 
-def plot_path_comparisons(results):
+def plot_path_comparisons(results, gammas):
     """Plots the robot path for each method and different gamma values."""
     sns.set_theme()
     fig, ax = plt.subplots(figsize=(9, 5))
-
-    gammas = [0.1, 0.2, 0.3, 1.0]
-    for i in range(len(results)-1):
-        X = results[i+1]['mpc']['_x']
-        label = "MPC-CBF ($\gamma={}$)".format(gammas[i])
-        ax.plot(X[:, 0], X[:, 1], label=label)
-
-    X_dc = results[0]['mpc']['_x']
-    ax.plot(X_dc[:, 0], X_dc[:, 1], 'k--', label="MPC-DC")
-
     ax.set_xlabel('x [m]')
     ax.set_ylabel('y [m]')
     plt.title("Robot path (N=10)")
     plt.tight_layout()
     ax.axis('equal')
+
+    # Plot MPC-CBF paths for each gamma
+    for i in range(len(results)-1):
+        X = results[i+1]['mpc']['_x']
+        label = "MPC-CBF ($\gamma={}$)".format(gammas[i])
+        ax.plot(X[:, 0], X[:, 1], label=label)
+
+    # Plot MPC-DC path
+    X_dc = results[0]['mpc']['_x']
+    ax.plot(X_dc[:, 0], X_dc[:, 1], 'k--', label="MPC-DC")
 
     # Plot initial position
     x0 = X_dc[0, :2]
@@ -367,11 +366,11 @@ def plot_min_distance_comparison(min_distances_cbf, min_distances_dc, gamma):
     df_dc = pd.DataFrame({'Controller': "MPC-DC", 'Dist': min_distances_dc})
     dist_df = pd.concat([df_cbf, df_dc])
 
-    # Plot average cost of all experiments vs method
+    # Plot average min distance of all experiments vs method
     sns.set_theme()
     plt.figure(figsize=(9, 5))
     sns.barplot(data=dist_df, x='Controller', y='Dist', capsize=.2)
-    plt.title("Total Cost Comparison for {} experiments".format(len(min_distances_cbf)))
+    plt.title("Min distance for {} experiments".format(len(min_distances_cbf)))
     plt.xlabel('Controller')
     plt.ylabel('Average Minimum Distances')
     plt.savefig('images/min_distances_comparisons_barplot.png')

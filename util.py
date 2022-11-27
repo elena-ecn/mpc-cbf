@@ -80,20 +80,43 @@ def run_multiple_experiments(N):
     for c in cont_type:
         config.controller = c
         for i in range(N):
-            # Define controller & run simulation
-            controller = MPC()
-            controller.run_simulation()  # Closed-loop control simulation
+            run_sim()
 
-            # Store results
-            save_mpc_results(controller)
+
+def run_sim():
+    """Runs a simulation and saves the results."""
+    controller = MPC()            # Define controller
+    controller.run_simulation()   # Run closed-loop control simulation
+    save_mpc_results(controller)  # Store results
+
+
+def run_sim_for_different_gammas(gammas):
+    """Runs simulation for the MPC-DC and for each gamma for the MPC-CBF."""
+
+    # Run simulation for the MPC-DC
+    config.controller = "MPC-DC"
+    run_sim()
+
+    # Run simulations for each gamma for the MPC-CBF
+    config.controller = "MPC-CBF"
+    for gamma in gammas:
+        config.gamma = gamma
+        run_sim()
 
 
 def compare_results_by_gamma():
-    """Plots path for each method and different gamma values."""
+    """Runs simulations and plots path for each method and different gamma values."""
 
+    gammas = [0.1, 0.2, 0.3, 1.0]  # Values to test
+
+    # Run simulations
+    run_sim_for_different_gammas(gammas)
+
+    # Load results
     results = [load_mpc_results("MPC-DC_setpoint")]
-    for gamma in [0.1, 0.2, 0.3, 1.0]:
+    for gamma in gammas:
         filename_cbf = "MPC-CBF_setpoint_gamma" + str(gamma)
         results.append(load_mpc_results(filename_cbf))
 
-    plot_path_comparisons(results)
+    # Plot path comparison
+    plot_path_comparisons(results, gammas)
