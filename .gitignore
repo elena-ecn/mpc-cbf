@@ -5,8 +5,9 @@
 .vscode
 
 # Build artifacts
-build/
 docs/
+#docs/build/
+#docs/source/_templates
 
 # Python
 venv/

@@ -70,7 +70,7 @@ class MPC:
 
         # Set right-hand-side of ODE for all introduced states (_x).
         x_next = _x + B@_u*self.Ts
-        model.set_rhs('x', x_next, process_noise=False)  # ToDo
+        model.set_rhs('x', x_next, process_noise=False)  # Set to True if adding noise
 
         # Optional: Define an expression, which represents the stage and terminal
         # cost of the control problem. This term will be later used as the cost in
@@ -333,5 +333,5 @@ class MPC:
         for k in range(self.sim_time):
             u0 = self.mpc.make_step(x0)
             y_next = self.simulator.make_step(u0)
-            # y_next = self.simulator.make_step(u0, w0=10**(-4)*np.random.randn(3, 1))  # ToDo Optional Additive process noise
+            # y_next = self.simulator.make_step(u0, w0=10**(-4)*np.random.randn(3, 1))  # Optional Additive process noise
             x0 = self.estimator.make_step(y_next)
