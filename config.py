@@ -4,7 +4,7 @@ import numpy as np
 
 sim_time = 200                             # Total simulation time steps
 Ts = 0.1                                   # Sampling time [s]
-T_horizon = 15                             # Prediction horizon time steps
+T_horizon = 20                             # Prediction horizon time steps
 
 gamma = 0.1                                # CBF parameter in [0,1]
 safety_dist = 0.03                         # Safety distance

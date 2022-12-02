@@ -3,9 +3,16 @@ Model Predictive Control with discrete-time Control Barrier Functions (MPC-CBF) 
 
 The MPC-CBF optimization problem is given by:
 <br>
-<p align="center" width="100%">
-    <img src="images/Display/optimization.png" width="400">
-</p>
+$$
+\begin{array}{cl}
+\min _{u_{t: l+N-1 \mid t}} & \frac{1}{2} \bar{x}_N^T Q_x \bar{x}_N+\sum_{k=0}^{N-1} \frac{1}{2} \tilde{x}_k^T Q_x \tilde{x}_k+\frac{1}{2} \tilde{u}_k^T Q_u \bar{u}_k \\
+\text { s.t. } & x_{t+k+1 \mid t}=x_{t+k \mid t}+f\left(x_{t+k \mid t}, u_{t+k \mid t}\right) \cdot T_s, \quad k=0, . ., N-1, \\
+& x_{\min } \leq x_{t+k \mid t} \leq x_{\max }, \quad k=0, \ldots, N-1, \\
+& u_{\min } \leq u_{t+k \mid t} \leq u_{\max }, \quad k=0, \ldots, N-1, \\
+& x_{t \mid t}=x_t, \\
+& \Delta h\left(x_{l+k \mid l}, u_{t+k \mid t}\right) \geq-\gamma h\left(x_{l+k \mid \ell}\right), \quad k=0, \ldots, N-1
+\end{array}
+$$
 
 Results
 -------

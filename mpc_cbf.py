@@ -263,7 +263,7 @@ class MPC:
         return h
 
     def set_tvp_for_mpc(self, mpc):
-        """Sets the trajectory to be followed for trajectory tracking.
+        """Sets the trajectory for trajectory tracking and/or the moving obstacles' trajectory.
 
         Inputs:
           - mpc(do_mpc.controller.MPC): The mpc controller
