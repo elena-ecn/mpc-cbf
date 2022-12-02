@@ -2,7 +2,8 @@
 Model Predictive Control with discrete-time Control Barrier Functions (MPC-CBF) for a wheeled mobile robot.
 
 The MPC-CBF optimization problem is given by:
-<br>
+
+
 $$\\begin{aligned}
 \\min\_{u_{t: t+N-1 \\mid t}} \\quad & \\frac{1}{2} \\bar{x}\_N^T Q_x \\bar{x}\_N+\\sum\_{k=0}^{N-1} \\frac{1}{2} \\tilde{x}\_k^T Q_x \\tilde{x}\_k+\\frac{1}{2} \\tilde{u}\_k^T Q\_u \\bar{u}\_k\\\\
 \\textrm{s.t.} \\quad 
