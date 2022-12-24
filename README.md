@@ -5,7 +5,7 @@ The MPC-CBF optimization problem is given by:
 
 
 $$\\begin{aligned}
-\\min\_{u_{t: t+N-1 \\mid t}} \\quad & \\frac{1}{2} \\tilde{x}\_N^T Q_x \\tilde{x}\_N+\\sum\_{k=0}^{N-1} \\frac{1}{2} \\tilde{x}\_k^T Q_x \\tilde{x}\_k+\\frac{1}{2} \\tilde{u}\_k^T Q\_u \\tilde{u}\_k\\\\
+\\min\_{u_{t: t+N-1 \\mid t}} \\quad & \\frac{1}{2} \\tilde{x}\_N^T Q_x \\tilde{x}\_N+\\sum\_{k=0}^{N-1} \\frac{1}{2} \\tilde{x}\_k^T Q_x \\tilde{x}\_k+\\frac{1}{2} u\_k^T Q\_u u\_k\\\\
 \\textrm{s.t.} \\quad 
  & x\_{t+k+1 \\mid t}=x\_{t+k \\mid t}+f\\left(x\_{t+k \\mid t}, u\_{t+k \\mid t}\\right) \\cdot T\_s, \\quad k=0, . ., N-1,\\\\
  & x\_{\\min } \\leq x\_{t+k \\mid t} \\leq x\_{\\max }, \\quad k=0, \\ldots, N-1,\\\\
@@ -13,6 +13,9 @@ $$\\begin{aligned}
  & x\_{t \\mid t}=x\_t,   \\\\
  & \\Delta h\\left(x\_{t+k \\mid t}, u\_{t+k \\mid t}\\right) \\geq-\\gamma h\\left(x\_{t+k \\mid t}\\right), \\quad k=0, \\ldots, N-1 \\\\
 \\end{aligned}$$
+
+
+where $\\tilde{x}\_k=x\_{des,k} - x\_{k}$.
 
 
 Results
